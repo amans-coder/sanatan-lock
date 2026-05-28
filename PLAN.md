@@ -342,9 +342,9 @@ Single `SharedPreferences` file: `sadhana_blocker_prefs`. Both sides agree on ke
 |---|---|---|
 | **App framework** | Expo SDK 54 (React Native, TypeScript, Expo Router) | Emergent default |
 | **State** | Zustand | lightweight, no provider drilling |
-| **Local KV** | `@/src/utils/storage` (pre-shipped MMKV wrapper) | DO NOT install AsyncStorage |
+| **Local KV** | `@/src/utils/storage` (AsyncStorage wrapper) | AsyncStorage is already wired and works. Keep it. |
 | **Content sync** | FastAPI + MongoDB (Emergent default) | replaces Firestore |
-| **Auth** | Phase 1: anonymous device ID. Phase 2: Emergent Google Auth | Firebase Auth not used |
+| **Auth** | Phase 1: anonymous device ID (no login screen). Phase 2: login/auth flow (design TBD — will be shared with design files) | Firebase Auth not used. No auth screens in V1. |
 | **Panchang** | `mhah-panchang` (npm) | JS port of jyotish; accuracy validated by Nilay |
 | **Notifications** | `expo-notifications` | requires dev build |
 | **Animation** | `react-native-reanimated` (already in Expo) | for prayer screen entrance |
@@ -594,7 +594,7 @@ DO NOT:
 ## 14. Open Questions (resolve in Week 1 kickoff)
 
 1. **Primary language at launch:** Hindi + English? Add Sanskrit transliteration always? Tamil/Telugu/Kannada V1 or V2?
-2. **Auth model V1:** Fully anonymous (device ID only) or Emergent Google Auth from Day 1? Recommendation: anonymous V1, auth V2.
+2. **Auth model V1:** ~~Fully anonymous or Google Auth from Day 1?~~ **RESOLVED: Anonymous device-ID only for V1.** No login screen. Generate UUID on first launch, send as X-Device-ID header. Login/auth design coming later with design files.
 3. **Monetization V1:** Free forever, or "Plus" tier (advanced panchang, more scriptures)? Default: free V1.
 4. **Content storage V1:** Bundled JSON only, or Mongo sync? Default: bundled + optional Mongo sync for future content updates without app release.
 5. **Crashes/analytics:** ~~Sentry, Firebase Crashlytics, or none V1?~~ **RESOLVED: Firebase Crashlytics from Day 1** (Crashlytics only, no other Firebase services).

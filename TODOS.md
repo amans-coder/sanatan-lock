@@ -29,7 +29,7 @@
   storage wrapper imports it. Plan §6 says "DO NOT install AsyncStorage" and use MMKV.
   Current code contradicts the plan. Either switch to MMKV or accept AsyncStorage.
 - **Effort:** S (if accepting AsyncStorage) / M (if migrating to MMKV)
-- **Blocked by:** Decision on which storage to actually use
+- **RESOLVED:** Keep AsyncStorage — it is already wired and works. Removed the "DO NOT use AsyncStorage" rule from PLAN.md §6.
 
 ### TODO: Source all content (Gita, mantras, Chalisas, Stotrams)
 - **Why:** Content is critical-path for both Track A (scripture reader) and Track B (overlay).
