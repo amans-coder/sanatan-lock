@@ -4,9 +4,9 @@
 > **"The app that makes you pray before you scroll."**
 >
 > Document owner: Aman / Vibhor / Nilay
-> Last updated: 2026-05-24
+> Last updated: 2026-05-28
 > Status: Ready for execution
-> Repo: `github.com/<your-org>/sadhana-lock` (to be created)
+> Repo: `github.com/amans-coder/sanatan-lock`
 
 ---
 
@@ -72,10 +72,12 @@ sadhana-lock/                            ← GitHub repo root
 ├── README.md
 ├── PLAN.md                              ← THIS FILE (master plan)
 ├── CONTRIBUTING.md                      ← workflow rules for both tracks
+├── TODOS.md                              ← deferred work (P0/P1/P2 priorities)
 │
 ├── docs/
 │   ├── NATIVE_MODULE_CONTRACT.md        ← the API contract (source of truth)
 │   ├── DESIGN_HANDOFF.md                ← Figma → code workflow
+│   ├── BLOCKING_LOGIC.md             ← blocker engine design decisions (8 open items)
 │   ├── REVIEW-ENG.md                    ← (existing) technical risks
 │   ├── REVIEW-DESIGN.md                 ← (existing) Hindu design rules
 │   ├── REVIEW-DEVEX.md
@@ -188,6 +190,9 @@ sadhana-lock/                            ← GitHub repo root
 10. **`accessibility_service_config.xml`** — proper declaration that survives Google Play review.
 11. **Gentle vs Strict mode logic.**
 12. **Diagnostic event emission** to JS layer (so the Expo Diagnostics screen can show "service alive: yes/no").
+13. **UsageStatsManager fallback** — polling-based foreground-app detection if Google rejects AccessibilityService. See `docs/BLOCKING_LOGIC.md` §4.
+14. **ScheduleManager.kt** — Nightly Lock (hard block after configurable time) + Morning Prayer Gate (first prayer of the day unlocks all apps). See `docs/BLOCKING_LOGIC.md` §2.
+15. **Firebase Crashlytics integration** — native crash reporting with custom keys (`device_oem`, `detection_method`, `overlay_state`). Crashlytics ONLY, no other Firebase services.
 
 ### ❌ Out of scope for V1 (both tracks):
 - iOS (Apple Screen Time API is a different beast; revisit V2).
@@ -195,6 +200,9 @@ sadhana-lock/                            ← GitHub repo root
 - Audio recitations.
 - Dark mode.
 - Monetization.
+- Breathe mode (One Sec-style pause — dilutes spiritual identity, revisit V2).
+- Home screen widget (verse + streak counter — V1.1).
+- iOS (deferred to V2).
 
 ---
 
@@ -303,17 +311,28 @@ All methods reject with an `Error` whose `message` is one of:
 
 ## 5. Shared State Schema (SharedPreferences)
 
+> **UPDATE (2026-05-28):** SharedPreferences is now used for **persistence only** (crash recovery).
+> Runtime state flows through the Expo Module bridge directly. See `docs/BLOCKING_LOGIC.md` §1.
+
 Single `SharedPreferences` file: `sadhana_blocker_prefs`. Both sides agree on keys:
 
 | Key | Type | Writer | Reader | Description |
 |---|---|---|---|---|
-| `blocked_packages` | `Set<String>` | TS via `setBlockedApps` | Kotlin service | apps to intercept |
-| `mode` | `String` (`gentle`/`strict`) | TS | Kotlin | unlock difficulty |
-| `selected_deity` | `String` | TS | Kotlin | which deity for overlay |
-| `overlay_content_json` | `String` (serialized `PrayerContentForOverlay`) | TS | Kotlin overlay | what to render |
-| `service_enabled` | `Boolean` | TS | Kotlin | master kill switch |
-| `last_prayer_ts` | `Long` | Kotlin | TS | for streak tracking |
-| `prayer_count_today` | `Int` | Kotlin | TS | for daily stats |
+| `blocked_packages` | `Set<String>` | Module | Service (cold start) | apps to intercept |
+| `mode` | `String` (`gentle`/`strict`) | Module | Service (cold start) | unlock difficulty |
+| `selected_deity` | `String` | Module | Service (cold start) | which deity for overlay |
+| `overlay_content_json` | `String` (serialized `PrayerContentForOverlay`) | Module | Service (cold start) | what to render |
+| `service_enabled` | `Boolean` | Module | Service (cold start) | master kill switch |
+| `last_prayer_ts` | `Long` | Service | Module | for streak tracking |
+| `prayer_count_today` | `Int` | Service | Module | for daily stats |
+| `night_lock_enabled` | `Boolean` | Module | ScheduleManager | night lock toggle |
+| `night_lock_start_hour` | `Int` | Module | ScheduleManager | e.g., 22 (10 PM) |
+| `night_lock_end_hour` | `Int` | Module | ScheduleManager | e.g., 6 (6 AM) |
+| `morning_prayer_done_today` | `Boolean` | Service | ScheduleManager | reset at night_lock_end |
+| `cooldown_minutes` | `Int` | Module | Service | unlock window duration |
+| `detection_method` | `String` | Module | Service | `accessibility` / `usage_stats` |
+
+> **Note:** Do NOT store deity images in SharedPreferences. Use file storage + URI. See `docs/BLOCKING_LOGIC.md` §9.
 
 ---
 
@@ -335,6 +354,7 @@ Single `SharedPreferences` file: `sadhana_blocker_prefs`. Both sides agree on ke
 | **Build** | EAS Build via Emergent Publish button | produces signed APK |
 | **Repo** | GitHub, single monorepo | "Save to GitHub" from Emergent |
 | **Target** | Android only, minSdk 26, targetSdk 34 | iOS deferred to V2 |
+| **Crash reporting** | Firebase Crashlytics (Android SDK + `@react-native-firebase/crashlytics`) | Crashlytics ONLY — no other Firebase services. Overrides original "no Firebase" rule. |
 
 ---
 
@@ -564,6 +584,10 @@ DO NOT:
 | ProGuard obfuscates AccessibilityService class (Play removes it) | MEDIUM | Explicit `-keep` rules in `proguard-rules.pro`; Track B owns these rules | Claude Code |
 | Content inaccuracy (wrong mantra/deity attribute) | MEDIUM | Nilay verifies, gets pandit review before launch | Nilay |
 | Vibhor's overlay design lands late | LOW | Claude Code ships v1 overlay with placeholder layout (Week 1 hello-world); swaps to final XML when design lands | Claude Code |
+| Night Lock alarm deferred by Doze mode | HIGH | Use `setExactAndAllowWhileIdle()` for AlarmManager; test on Xiaomi/Samsung | Claude Code |
+| Recent Apps swipe bypasses overlay | HIGH | Use `TYPE_ACCESSIBILITY_OVERLAY` flag + `FLAG_NOT_FOCUSABLE`; test bypass vectors | Claude Code |
+| User blocks launcher or SadhanaLock itself | MEDIUM | Hard-coded protected-apps denylist in `AppListHelper.kt`; see `docs/BLOCKING_LOGIC.md` §7 | Claude Code |
+| SharedPreferences cross-process invisible | HIGH | Module-first IPC (resolved); SharedPreferences for crash recovery only; see `docs/BLOCKING_LOGIC.md` §1 | Claude Code |
 
 ---
 
@@ -573,8 +597,9 @@ DO NOT:
 2. **Auth model V1:** Fully anonymous (device ID only) or Emergent Google Auth from Day 1? Recommendation: anonymous V1, auth V2.
 3. **Monetization V1:** Free forever, or "Plus" tier (advanced panchang, more scriptures)? Default: free V1.
 4. **Content storage V1:** Bundled JSON only, or Mongo sync? Default: bundled + optional Mongo sync for future content updates without app release.
-5. **Crashes/analytics:** Sentry, Firebase Crashlytics, or none V1? Default: none V1, add Sentry V2.
+5. **Crashes/analytics:** ~~Sentry, Firebase Crashlytics, or none V1?~~ **RESOLVED: Firebase Crashlytics from Day 1** (Crashlytics only, no other Firebase services).
 6. **Pandit/expert reviewer:** Who is the final authority on Sanskrit accuracy? Identify by end of Week 1.
+7. **Blocker engine design decisions:** 8 open `[DECIDE]` items in `docs/BLOCKING_LOGIC.md` — night lock timing, cooldown duration, gentle vs strict behavior, morning gate definition, clock protection, denylist policy, icon loading, polling interval. **Must resolve before Track B starts.**
 
 ---
 
@@ -592,6 +617,10 @@ The app ships when ALL of the following are true:
 - [ ] Opening a blocked app shows the deity-themed prayer overlay
 - [ ] Tapping "Om" dismisses the overlay; user can use the app for the unlock window
 - [ ] Gentle vs Strict mode behaves as specified
+- [ ] Night Lock activates at scheduled time — blocked apps are hard-locked (no prayer bypass)
+- [ ] Morning Prayer Gate — first prayer of the day unlocks all apps
+- [ ] UsageStatsManager fallback works if Accessibility permission unavailable
+- [ ] Firebase Crashlytics reports crashes from both Expo and Kotlin layers
 - [ ] Service survives a reboot
 - [ ] Service survives Xiaomi MIUI kill (most hostile OEM)
 - [ ] Battery-optimization-ignored guidance is shown to user
@@ -609,7 +638,9 @@ The app ships when ALL of the following are true:
 
 1. **Read this entire document** — Aman, Vibhor, Nilay.
 2. **Confirm scope split** — anything we missed?
-3. **Create the GitHub repo** (Aman).
+3. **~~Create the GitHub repo~~** (DONE — `amans-coder/sanatan-lock`).
+3b. **Generate Play Store signing key** and back up securely. Do NOT defer to Week 5.
+3c. **Rename `app.json`** from "frontend" to "SadhanaLock" / "sadhanalock" before first EAS build.
 4. **Resolve §14 open questions** in a 30-min call.
 5. **Emergent kickoff:** I will scaffold the Expo app, the mocked native module, the contract types, the design tokens, and the docs structure — and push to GitHub.
 6. **Claude Code kickoff:** Aman pastes the §11 prompt into Claude Code with the repo URL. Claude Code begins from `/frontend/modules/sadhana-blocker/`.
