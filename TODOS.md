@@ -6,11 +6,16 @@
 
 ## P0 — Must resolve before implementation starts
 
-### TODO: Resolve all `[DECIDE]` items in docs/BLOCKING_LOGIC.md
-- **Why:** Track B cannot implement the AccessibilityService without knowing the state
-  machine, cooldown rules, night lock timing, and edge case behavior.
-- **Effort:** S (design session, not code)
-- **Blocked by:** Team availability for design discussion
+### ~~TODO: Resolve all `[DECIDE]` items in docs/BLOCKING_LOGIC.md~~
+- **RESOLVED on 2026-05-28.** All 8 decisions made. See `docs/BLOCKING_LOGIC.md` §12.
+- Night lock: configurable, device local tz, default 10PM-6AM
+- Cooldown: configurable 5/15/30/60 min, default 15
+- Gentle: instant Om. Strict: 10s wait then Om
+- Morning gate: must open app and pray (overlay doesn't count)
+- Clock protection: not required (trust user)
+- Denylist: not overridable
+- Icons: paginated (getAppIcon per app)
+- UsageStats: battery-friendly polling (~1500-2000ms)
 
 ### TODO: Rename app identity (app.json, package name)
 - **Why:** `app.json` says "frontend" — must be "SadhanaLock" / "sadhanalock" before first
@@ -38,11 +43,8 @@
 - **Effort:** L (content sourcing, not code)
 - **Blocked by:** Pandit reviewer identification (see below)
 
-### TODO: Identify pandit/Sanskrit expert reviewer
-- **Why:** Plan §14 lists this as an open question. All Sanskrit content must be verified
-  before launch. No reviewer = no content approval = no launch.
-- **Effort:** S (finding the person, not code)
-- **Blocked by:** Nothing — do this Week 1
+### ~~TODO: Identify pandit/Sanskrit expert reviewer~~
+- **RESOLVED: Not required for V1.** Content accuracy handled by team internally.
 
 ---
 
@@ -69,8 +71,10 @@
 ### TODO: Backend auth + input validation
 - **Why:** Backend currently has CORS `allow_origins=["*"]` and zero auth. Any client can
   read/write to MongoDB. `client_name` goes to DB without sanitization.
+- **Auth:** Google Sign-In via Emergent built-in auth. Track A (Emergent) owns the auth flow.
+  Backend validates auth tokens from Emergent.
 - **Effort:** M
-- **Blocked by:** Backend API design finalized
+- **Blocked by:** Emergent auth integration (Track A)
 
 ---
 
