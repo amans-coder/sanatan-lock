@@ -1,5 +1,5 @@
 # SadhanaLock — Master Build Plan
-## Split-Stack Strategy: Emergent (Expo) + Nilay with Claude Code (Kotlin)
+## Unified Build: Claude Code (Expo + Kotlin)
 
 > **"The app that makes you pray before you scroll."**
 >
@@ -16,10 +16,10 @@ SadhanaLock will be built as a **single GitHub repo** containing **two co-locate
 
 | Track | Owner | Workspace | What it produces |
 |---|---|---|---|
-| **Track A — App Shell** | Emergent (Claude in Emergent IDE) | `/frontend/` (Expo React Native) | The full user-facing app: onboarding, scripture reader, prayer screens, deity selection, panchang, daily check-in, notifications, settings, content sync, beautiful UI |
+| **Track A — App Shell** | Claude Code (subagents) | `/frontend/` (Expo React Native) | The full user-facing app: onboarding, scripture reader, prayer screens, deity selection, panchang, daily check-in, notifications, settings, content sync, beautiful UI |
 | **Track B — Blocker Engine** | Nilay (with Claude Code) | `/frontend/modules/sadhana-blocker/` (Kotlin native module) | The AccessibilityService, overlay window, app-detection logic, BootReceiver, HealthCheckWorker, permission flows |
 
-The two tracks share a **single GitHub repo**, communicate via a **typed Expo Module API**, and never block each other thanks to a **mocked native module** that the Emergent side uses until Track B lands its first real implementation.
+The two tracks share a **single GitHub repo**, communicate via a **typed Expo Module API**, and never block each other thanks to a **mocked native module** that the Track A side uses until Track B lands its first real implementation.
 
 **Outcome:** A single APK where the Expo app calls `SadhanaBlocker.setBlockedApps(...)` in TypeScript and the Kotlin AccessibilityService quietly does its job in the background.
 
@@ -32,7 +32,7 @@ The two tracks share a **single GitHub repo**, communicate via a **typed Expo Mo
 │                       SadhanaLock APK (single binary)              │
 │                                                                    │
 │  ┌──────────────────────────────────────────────────────────────┐  │
-│  │   EXPO / REACT NATIVE LAYER  (built by Emergent)             │  │
+│  │   EXPO / REACT NATIVE LAYER  (built by Claude Code - Track A)             │  │
 │  │   • Onboarding, Home, Deity Picker                           │  │
 │  │   • Scripture Reader (Gita, Chalisas, Stotrams)              │  │
 │  │   • Prayer Screen (full-screen, Devanagari, "Om" button)     │  │
@@ -155,14 +155,14 @@ sadhana-lock/                            ← GitHub repo root
 
 **Why this layout works:**
 - Single `git clone` gives Claude Code everything it needs.
-- Emergent edits `/frontend/app/` and `/frontend/src/` freely; Claude Code edits `/frontend/modules/sadhana-blocker/` freely. Merge conflicts are nearly impossible by design.
+- Track A edits `/frontend/app/` and `/frontend/src/` freely; Claude Code edits `/frontend/modules/sadhana-blocker/` freely. Merge conflicts are nearly impossible by design.
 - `docs/NATIVE_MODULE_CONTRACT.md` is the single shared source of truth — both sides commit changes to it via PR.
 
 ---
 
 ## 3. Scope Split — Who Builds What
 
-### ✅ Emergent (Track A) builds:
+### ✅ Claude Code (Track A) builds:
 1. Entire Expo Router scaffolding, navigation, theming, fonts.
 2. **All UI screens** (onboarding, home, deity picker, scripture reader, prayer screen, lock list, check-in, panchang, settings, diagnostics).
 3. **All content pipeline:** bundled JSON loaders, MongoDB sync, offline cache, Verse-of-the-Day rotation.
@@ -171,7 +171,7 @@ sadhana-lock/                            ← GitHub repo root
 6. **Festival list + notifications** (`expo-notifications`).
 7. **Deity personalization theme system.**
 8. **Onboarding flow** (welcome → language → deity selection → permission explainers).
-9. **Mocked native module** (`SadhanaBlocker.mock.ts`) so the Expo app runs end-to-end on Emergent's preview *before* the Kotlin lands.
+9. **Mocked native module** (`SadhanaBlocker.mock.ts`) so the Expo app runs end-to-end on dev preview *before* the Kotlin lands.
 10. **TypeScript types & contract** for the native module (lives in `/frontend/modules/sadhana-blocker/src/`).
 11. **Expo Config Plugin** stub (just enough to register the module).
 12. **CI / EAS Build configuration** (so Claude Code's APK builds work).
@@ -346,19 +346,19 @@ Single `SharedPreferences` file: `sadhana_blocker_prefs`. Both sides agree on ke
 
 | Layer | Choice | Notes |
 |---|---|---|
-| **App framework** | Expo SDK 54 (React Native, TypeScript, Expo Router) | Emergent default |
+| **App framework** | Expo SDK 54 (React Native, TypeScript, Expo Router) | default |
 | **State** | Zustand | lightweight, no provider drilling |
 | **Local KV** | `@/src/utils/storage` (AsyncStorage wrapper) | AsyncStorage is already wired and works. Keep it. |
-| **Content sync** | FastAPI + MongoDB (Emergent default) | replaces Firestore |
-| **Auth** | Google Sign-In via Emergent built-in auth | Emergent handles the auth flow. Track A (Emergent) owns this. |
+| **Content sync** | FastAPI + MongoDB (default) | replaces Firestore |
+| **Auth** | Google Sign-In (implementation TBD) | Claude Code handles the auth flow. Track A owns this. |
 | **Panchang** | `mhah-panchang` (npm) | JS port of jyotish; accuracy validated by Nilay |
 | **Notifications** | `expo-notifications` | requires dev build |
 | **Animation** | `react-native-reanimated` (already in Expo) | for prayer screen entrance |
 | **Fonts** | `expo-font` + Noto Sans Devanagari + Poppins | bundled |
 | **Icons** | `@expo/vector-icons` (Lucide subset) | no emoji icons |
 | **Native blocker** | Kotlin, AccessibilityService, WindowManager `TYPE_ACCESSIBILITY_OVERLAY` | inside Expo Module |
-| **Build** | EAS Build via Emergent Publish button | produces signed APK |
-| **Repo** | GitHub, single monorepo | "Save to GitHub" from Emergent |
+| **Build** | EAS Build via EAS CLI | produces signed APK |
+| **Repo** | GitHub, single monorepo | standard git push |
 | **Target** | Android only, minSdk 26, targetSdk 34 | iOS deferred to V2 |
 | **Crash reporting** | Firebase Crashlytics (Android SDK + `@react-native-firebase/crashlytics`) | Crashlytics ONLY — no other Firebase services. Overrides original "no Firebase" rule. |
 
@@ -371,14 +371,14 @@ Single `SharedPreferences` file: `sadhana_blocker_prefs`. Both sides agree on ke
 ### Rule 1 — Contract before code.
 `docs/NATIVE_MODULE_CONTRACT.md` (auto-generated from `SadhanaBlocker.types.ts`) is committed **before any implementation**. Both sides code against it.
 
-### Rule 2 — Emergent ships a mock from Day 1.
+### Rule 2 — Track A ships a mock from Day 1.
 `SadhanaBlocker.mock.ts` simulates every method:
 - `getInstalledApps()` returns 10 fake apps.
 - `setBlockedApps()` resolves instantly.
 - `isAccessibilityEnabled()` returns a value driven by a dev toggle in the Diagnostics screen.
 - `onOverlayShown` event can be fired manually from the Diagnostics screen.
 
-A `__DEV__` flag (or `Constants.appOwnership === 'expo'`) picks between mock and real native module. **The Expo app on Emergent's preview always uses the mock.**
+A `__DEV__` flag (or `Constants.appOwnership === 'expo'`) picks between mock and real native module. **The Expo app on dev preview always uses the mock.**
 
 ### Rule 3 — Claude Code can develop without the Expo app.
 Track B includes a tiny **example Android app** (`/frontend/modules/sadhana-blocker/example-android/`) that imports the module and calls every method. Claude Code can install this and validate the blocker on a real phone without ever opening the Expo project.
@@ -394,15 +394,15 @@ import SadhanaBlocker from './SadhanaBlocker.real';
 
 ---
 
-## 8. Design Handoff (Vibhor → Emergent + Claude Code)
+## 8. Design Handoff (Vibhor → Claude Code)
 
 Vibhor exports from Figma into `/design/`:
 
 | Folder | What | Used by |
 |---|---|---|
-| `/design/deities/` | 7 deity PNGs at 1x/2x/3x | Emergent (in-app), Claude Code (overlay) |
-| `/design/icons/` | Lucide-style custom icons SVG | Emergent |
-| `/design/splash/` | splash @ 1x/2x/3x | Emergent (configures `expo-splash-screen`) |
+| `/design/deities/` | 7 deity PNGs at 1x/2x/3x | Track A (in-app), Track B (overlay) |
+| `/design/icons/` | Lucide-style custom icons SVG | Claude Code (A) |
+| `/design/splash/` | splash @ 1x/2x/3x | Track A (configures `expo-splash-screen`) |
 | `/design/overlay/` | overlay XML mockup + assets | Nilay (Claude Code) |
 | `/design/playstore/` | feature graphic, screenshots frames | Aman (Play Store listing) |
 
@@ -423,32 +423,32 @@ Per `REVIEW-DESIGN.md`:
 
 ### Week 1 — Foundations (parallel, zero handoff)
 
-| Vibhor | Aman | Nilay | Emergent (Track A) | Nilay with Claude Code (Track B) |
+| Vibhor | Aman | Nilay | Claude Code (Track A) | Nilay with Claude Code (Track B) |
 |---|---|---|---|---|
 | Design system in Figma | Set up MongoDB cluster + FastAPI sync schema | Source Gita JSON + DharmicData | Scaffold Expo app, fonts, theme, navigation skeleton | Create `/frontend/modules/sadhana-blocker/` skeleton, write the contract `.ts` types, ship mock |
 | 5 key screens drafted | Curate mantras for 7 deities | Source Chalisas/Aartis | Build mocked Diagnostics screen with toggles for every native method | Set up Android Studio project, AccessibilityService permission boilerplate, AndroidManifest |
 | | Create GitHub org + repo | Verify Gita Sanskrit accuracy | Implement `mhah-panchang` panchang display | Hello-world overlay (just shows "Hare Krishna" on top of any app — proves the pipe) |
 | | | | Push initial scaffold to GitHub | Push initial module to GitHub |
 
-**Exit criterion:** Both tracks have something running. Emergent preview shows the app with a mocked Diagnostics screen. Claude Code can show an overlay on a real device.
+**Exit criterion:** Both tracks have something running. dev preview shows the app with a mocked Diagnostics screen. Claude Code can show an overlay on a real device.
 
 ---
 
 ### Week 2 — UI builds + Real native scaffolding
 
-| Vibhor | Aman | Nilay | Emergent | Nilay (Claude Code) |
+| Vibhor | Aman | Nilay | Claude Code (A) | Nilay (Claude Code) |
 |---|---|---|---|---|
 | Scripture reader, lock list, overlay design | Finalize all overlay copy | Verify content | Build onboarding flow, deity picker, scripture reader | Implement `getInstalledApps()` (real) |
 | Permission explainer screens | Curate festival dates | Sanskrit accuracy | Build prayer screen, deity theming, Verse-of-Day | Implement `setBlockedApps()` + foreground-app detection |
 | | | | Wire content sync (MongoDB) | Implement `PrefsStore.kt` (matches §5 schema) |
 
-**Exit criterion:** Emergent app is feature-complete except blocking. Claude Code can detect foreground app changes and log them.
+**Exit criterion:** Track A app is feature-complete except blocking. Claude Code can detect foreground app changes and log them.
 
 ---
 
 ### Week 3 — The hard week: Real blocking engine + Real integration
 
-| Vibhor | Aman | Nilay | Emergent | Nilay (Claude Code) |
+| Vibhor | Aman | Nilay | Claude Code (A) | Nilay (Claude Code) |
 |---|---|---|---|---|
 | Error/empty/loading states | Test app on phone #1 with mocked blocker | Test app on phone #2 | Build lock list screen (real `getInstalledApps()` call), permissions explainer screens, Gentle/Strict toggle | `OverlayService.kt` + overlay XML matching Figma |
 | App icon + splash | | | Wire real `SadhanaBlocker` import behind a feature flag | `BootReceiver.kt`, `HealthCheckWorker.kt` |
@@ -460,7 +460,7 @@ Per `REVIEW-DESIGN.md`:
 
 ### Week 4 — Resilience + Play Store prep
 
-| Vibhor | Aman | Nilay | Emergent | Nilay (Claude Code) |
+| Vibhor | Aman | Nilay | Claude Code (A) | Nilay (Claude Code) |
 |---|---|---|---|---|
 | Design QA pass | Play Store listing draft, AccessibilityService declaration, privacy policy, data safety | Full E2E test new-user flow | Notifications, festival reminders, daily check-in polish, offline support | Edge cases: rapid app switching, back button, screen rotation, low memory |
 | Play Store screenshots | Production MongoDB setup | OEM coverage (Xiaomi, Samsung, OnePlus, Realme) | ProGuard rules for the native module (Kotlin classes must NOT be obfuscated) | ProGuard rules for AccessibilityService classes |
@@ -471,7 +471,7 @@ Per `REVIEW-DESIGN.md`:
 
 ### Week 5 — Submit + Iterate
 
-| Vibhor | Aman | Nilay | Emergent | Nilay (Claude Code) |
+| Vibhor | Aman | Nilay | Claude Code (A) | Nilay (Claude Code) |
 |---|---|---|---|---|
 | Fix QA-flagged design mismatches | Generate signing key (back up!), submit to Play Store closed testing, respond to Google review | Recruit 10–20 testers, content rating questionnaire, Hindu content expert review | Bug fixes from Nilay's QA list | Bug fixes from Nilay's QA list |
 
@@ -481,10 +481,10 @@ Per `REVIEW-DESIGN.md`:
 
 ## 10. Integration Strategy (How both APKs become one)
 
-Emergent and Claude Code both push to `main` of the same repo. The integration model is:
+Track A and Track B both push to `main` of the same repo. The integration model is:
 
 1. **Branch protection:** `main` is protected. All work happens on feature branches.
-   - Track A branches: `feat/a-*` (e.g., `feat/a-scripture-reader`)
+   - Track A branches: `feat/a-*` (Claude Code subagents) (e.g., `feat/a-scripture-reader`)
    - Track B branches: `feat/b-*` (e.g., `feat/b-overlay-service`)
 2. **No file overlap by convention:**
    - Track A never edits `/frontend/modules/sadhana-blocker/android/**`
@@ -565,7 +565,7 @@ DO NOT:
 ## 12. GitHub Setup Instructions (One-time, do today)
 
 1. **Aman creates the repo** on GitHub: `sadhana-lock` (private to start).
-2. **From Emergent**, click **"Save to GitHub"** in the Emergent UI. Point it at the new repo. This pushes the current `/app/` contents (which become `/frontend/` and `/backend/` after the Week-1 restructure).
+2. **Push initial scaffold to GitHub in the GitHub. Point it at the new repo. This pushes the current `/app/` contents (which become `/frontend/` and `/backend/` after the Week-1 restructure).
 3. **Locally**, Aman/Claude Code clones: `git clone git@github.com:<org>/sadhana-lock.git`
 4. Add branch protection on `main` (require 1 PR review, require CI green).
 5. Invite Vibhor (read), Nilay (write), Claude Code operator (write).
@@ -573,7 +573,7 @@ DO NOT:
    - `.github/workflows/expo-ci.yml` — runs on Track A PRs.
    - `.github/workflows/android-ci.yml` — runs on Track B PRs.
 7. Vibhor pushes initial Figma exports to `/design/`.
-8. Hand Claude Code the prompt from §11 and the repo URL.
+8. Hand Nilay the prompt from §11 and the repo URL.
 
 ---
 
@@ -585,7 +585,7 @@ DO NOT:
 | Android 15/16 further restricts AccessibilityService | HIGH | Claude Code implements UsageStatsManager fallback in same module | Nilay (Claude Code) |
 | OEM kills background service (Xiaomi most aggressive) | HIGH | HealthCheckWorker + per-OEM autostart deep links + clear user instructions | Nilay (Claude Code) |
 | Mock and real module diverge | MEDIUM | Contract owns the types; PR review on any contract change; mock has unit tests matching real behaviour | Both |
-| EAS Build can't find the local module | MEDIUM | Module declared in `app.json` `expo.plugins`; tested in Week-1 CI | Emergent |
+| EAS Build can't find the local module | MEDIUM | Module declared in `app.json` `expo.plugins`; tested in Week-1 CI | Claude Code (A) |
 | Devanagari rendering broken on overlay (Kotlin XML) | MEDIUM | Use the same Noto Sans Devanagari font bundled in module assets; test in Week 3 | Nilay (Claude Code) |
 | ProGuard obfuscates AccessibilityService class (Play removes it) | MEDIUM | Explicit `-keep` rules in `proguard-rules.pro`; Track B owns these rules | Nilay (Claude Code) |
 | Content inaccuracy (wrong mantra/deity attribute) | MEDIUM | Nilay verifies, gets pandit review before launch | Nilay |
@@ -600,7 +600,7 @@ DO NOT:
 ## 14. Open Questions (resolve in Week 1 kickoff)
 
 1. **Primary language at launch:** ~~Hindi + English?~~ **RESOLVED: Hindi, English, and Hinglish.** Language selection in onboarding flow. All three available from V1.
-2. **Auth model V1:** ~~Fully anonymous or Google Auth from Day 1?~~ **RESOLVED: Google Sign-In via Emergent built-in auth.** Emergent handles the full auth flow. Track A owns this.
+2. **Auth model V1:** ~~Fully anonymous or Google Auth from Day 1?~~ **RESOLVED: Google Sign-In (implementation TBD).** Claude Code handles the full auth flow. Track A owns this.
 3. **Monetization V1:** ~~Free forever, or "Plus" tier?~~ **RESOLVED: Free for now.** No monetization in V1.
 4. **Content storage V1:** Bundled JSON only, or Mongo sync? Default: bundled + optional Mongo sync for future content updates without app release.
 5. **Crashes/analytics:** ~~Sentry, Firebase Crashlytics, or none V1?~~ **RESOLVED: Firebase Crashlytics from Day 1** (Crashlytics only, no other Firebase services).
@@ -648,7 +648,7 @@ The app ships when ALL of the following are true:
 3b. **Generate Play Store signing key** and back up securely. Do NOT defer to Week 5.
 3c. **Rename `app.json`** from "frontend" to "SadhanaLock" / "sadhanalock" before first EAS build.
 4. **Resolve §14 open questions** in a 30-min call.
-5. **Emergent kickoff:** I will scaffold the Expo app, the mocked native module, the contract types, the design tokens, and the docs structure — and push to GitHub.
+5. **Track A kickoff: Claude Code subagents scaffold the Expo app, wire the native module, build all screens, and push to GitHub.
 6. **Track B kickoff:** Nilay pastes the §11 prompt into Claude Code with the repo URL. Nilay begins from `/frontend/modules/sadhana-blocker/`.
 7. **Daily 15-min sync** for the next 5 weeks.
 

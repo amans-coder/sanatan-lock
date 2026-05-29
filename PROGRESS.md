@@ -9,11 +9,11 @@
 
 | Track | Owner | Status | Current Phase |
 |---|---|---|---|
-| **Track A — App Shell** | Aman (Emergent) | 🟡 In Progress | Phase 1 — Foundations |
+| **Track A — App Shell** | Claude Code (subagents) | 🟡 In Progress | Phase 1 — Foundations |
 | **Track B — Blocker Engine** | Nilay (Claude Code) | 🟡 In Progress | Phases 1–4 code complete — pending first compile (needs JDK 17) |
 | **Design** | Vibhor | ⬜ Not Started | Design files pending |
 | **Content** | Aman + Team | ⬜ Not Started | Gita/mantras/chalisas need sourcing |
-| **Backend** | Aman (Emergent) | ⬜ Not Started | Boilerplate exists |
+| **Backend** | Claude Code | ⬜ Not Started | Boilerplate exists |
 
 ---
 
@@ -24,7 +24,7 @@ All decisions are final unless re-opened by team discussion.
 | # | Decision | Choice | Date |
 |---|---|---|---|
 | 1 | Storage | Keep AsyncStorage (already wired) | 2026-05-28 |
-| 2 | Auth V1 | Google Sign-In via Emergent built-in auth (Track A owns) | 2026-05-28 |
+| 2 | Auth V1 | Google Sign-In (implementation TBD) | 2026-05-28 |
 | 3 | Crash reporting | Firebase Crashlytics only | 2026-05-28 |
 | 4 | IPC pattern | Module-first, SharedPrefs for crash recovery | 2026-05-28 |
 | 5 | Night lock timing | Configurable, device local tz, default 10PM-6AM | 2026-05-28 |
