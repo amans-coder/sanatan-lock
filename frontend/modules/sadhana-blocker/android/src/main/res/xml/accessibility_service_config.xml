@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Declared narrowly so it survives Google Play's "AccessibilityService policy" review:
+  we only observe window-state changes to read the foreground package name, and we
+  state the purpose in @string/sadhana_accessibility_description (shown verbatim to the
+  user on the system enable screen, and reviewed by Google).
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows"
+    android:canRetrieveWindowContent="false"
+    android:notificationTimeout="100"
+    android:description="@string/sadhana_accessibility_description"
+    android:summary="@string/sadhana_accessibility_summary" />

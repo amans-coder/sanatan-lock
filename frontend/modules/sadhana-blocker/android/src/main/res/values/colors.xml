@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fallback overlay background; runtime overrides with deity-themed bgColorHex. -->
+    <color name="overlay_bg_default">#1A1033</color>
+    <color name="overlay_scrim">#CC000000</color>
+    <color name="overlay_text_primary">#FFFFFF</color>
+    <color name="overlay_text_secondary">#E0D8F0</color>
+    <color name="overlay_om_tint">#FFD86B</color>
+</resources>
