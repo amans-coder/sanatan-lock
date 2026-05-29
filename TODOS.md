@@ -17,11 +17,11 @@
 - Icons: paginated (getAppIcon per app)
 - UsageStats: battery-friendly polling (~1500-2000ms)
 
-### TODO: Rename app identity (app.json, package name)
+### ~~TODO: Rename app identity (app.json, package name)~~
 - **Why:** `app.json` says "frontend" — must be "SadhanaLock" / "sadhanalock" before first
   EAS build. Changing slug after first build breaks OTA updates permanently.
 - **Effort:** S
-- **Blocked by:** Nothing — do this immediately
+- **RESOLVED on 2026-05-29.** Set to SadhanaLock/sadhanalock/com.sadhanalock.app.
 
 ### TODO: Generate Play Store signing key
 - **Why:** Plan defers to Week 5. Losing a signing key = can never update the app on Play Store.

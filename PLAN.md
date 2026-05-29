@@ -286,6 +286,12 @@ startBlockerService(): Promise<void>;                  // enable
 stopBlockerService(): Promise<void>;                   // user pause
 getBlockerState(): Promise<BlockerState>;
 
+// --- Morning Gate (added 2026-05-28, contract-change #1) ---
+markMorningPrayerDone(): Promise<void>;                // JS tells native: morning prayer completed in-app
+
+// --- App icons (paginated, added 2026-05-28) ---
+getAppIcon(packageName: string): Promise<string | null>; // single icon on demand (base64)
+
 // --- Manual trigger (testing) ---
 debugShowOverlay(): Promise<void>;
 ```

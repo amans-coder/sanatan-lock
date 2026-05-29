@@ -38,13 +38,15 @@ All decisions are final unless re-opened by team discussion.
 | 13 | Languages | Hindi, English, Hinglish — selection in onboarding | 2026-05-28 |
 | 14 | Monetization | Free for V1 | 2026-05-28 |
 | 15 | Pandit reviewer | Not required — team handles content accuracy | 2026-05-28 |
+| 16 | Contract: markMorningPrayerDone() | Added — JS signals native when in-app morning prayer done | 2026-05-29 |
+| 17 | Contract: getAppIcon(pkg) | Added — paginated icon loading per decision #11 | 2026-05-29 |
 
 ---
 
 ## Track A — App Shell (Aman / Emergent)
 
 ### Phase 1 — Foundations
-- [ ] Fix app identity (app.json → "SadhanaLock" / "sadhanalock")
+- [x] Fix app identity (app.json → "SadhanaLock" / "sadhanalock")
 - [ ] Google Sign-In auth (Emergent built-in auth)
 - [ ] Design system + theme (colors.ts with all deity tokens)
 - [ ] Fonts setup (Noto Sans Devanagari + Poppins)
@@ -107,7 +109,7 @@ All decisions are final unless re-opened by team discussion.
 ## Shared / Blocking Items
 
 ### P0 — Must Do
-- [ ] Rename app.json (Track A — do immediately)
+- [x] Rename app.json (Track A — done 2026-05-29, com.sadhanalock.app)
 - [ ] Generate Play Store signing key (Aman)
 - [ ] Source content: 700 Gita verses + mantras for 7 deities + Chalisas + Stotrams + festivals
 - [x] Resolve all BLOCKING_LOGIC.md decisions (done 2026-05-28)
