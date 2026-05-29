@@ -137,6 +137,12 @@ All decisions are final unless re-opened by team discussion.
 - Languages: Hindi, English, Hinglish
 - Track B ownership: Nilay with Claude Code
 
+### Week 1 continued (2026-05-29)
+- PR #1 merged: Track B blocker engine (Phases 1-4) — 34 files, 2134 lines
+- app.json fixed: SadhanaLock / sadhanalock / com.sadhanalock.app
+- Contract additions approved: markMorningPrayerDone() + getAppIcon()
+- Awaiting: Emergent screens build, first compile, device testing
+
 ---
 
 > Both Aman and Nilay: update this file after completing any task. Check the boxes, add notes, keep it current.
