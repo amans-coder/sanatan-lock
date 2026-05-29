@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Foreground-app detection via AccessibilityService (primary path). -->
+    <!-- Overlay window above all apps, incl. Recent Apps (TYPE_ACCESSIBILITY_OVERLAY). -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- Re-arm the engine after reboot. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- HealthCheckWorker may run a short foreground service when nudging the user. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Battery-optimization exemption so OEMs don't kill the service. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- Full app list for the lock-list screen (A11+ requires explicit declaration). -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+
+    <!-- UsageStatsManager fallback if AccessibilityService is rejected/disabled. -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- Detect incoming calls to auto-dismiss the overlay (BLOCKING_LOGIC §6). -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+
+    <!-- Night Lock exact alarm scheduling (BLOCKING_LOGIC §2). -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <application>
+        <!-- The blocker engine. Class lives in the module namespace. -->
+        <service
+            android:name="expo.modules.sadhanablocker.service.SadhanaAccessibilityService"
+            android:exported="false"
+            android:label="@string/sadhana_accessibility_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <!-- Re-arm after reboot / app update. -->
+        <receiver
+            android:name="expo.modules.sadhanablocker.service.BootReceiver"
+            android:exported="true"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+
+        <!-- UsageStatsManager fallback poller (used only if AccessibilityService is unavailable). -->
+        <service
+            android:name="expo.modules.sadhanablocker.work.UsageStatsForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="App-blocking prayer reminder requires foreground-app detection when the accessibility service is unavailable on this device." />
+        </service>
+
+        <!-- Night Lock / Morning Gate alarm receiver. -->
+        <receiver
+            android:name="expo.modules.sadhanablocker.schedule.ScheduleAlarmReceiver"
+            android:exported="false" />
+    </application>
+</manifest>

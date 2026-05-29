@@ -1,0 +1,9 @@
+{
+  "name": "sadhana-blocker",
+  "version": "0.1.0",
+  "description": "SadhanaLock native Android blocker engine (Track B)",
+  "main": "index.ts",
+  "private": true,
+  "author": "Nilay (Track B) <nilay@sadhanalock>",
+  "license": "UNLICENSED"
+}

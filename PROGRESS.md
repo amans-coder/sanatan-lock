@@ -10,7 +10,7 @@
 | Track | Owner | Status | Current Phase |
 |---|---|---|---|
 | **Track A — App Shell** | Aman (Emergent) | 🟡 In Progress | Phase 1 — Foundations |
-| **Track B — Blocker Engine** | Nilay (Claude Code) | ⬜ Not Started | Waiting to start |
+| **Track B — Blocker Engine** | Nilay (Claude Code) | 🟡 In Progress | Phases 1–4 code complete — pending first compile (needs JDK 17) |
 | **Design** | Vibhor | ⬜ Not Started | Design files pending |
 | **Content** | Aman + Team | ⬜ Not Started | Gita/mantras/chalisas need sourcing |
 | **Backend** | Aman (Emergent) | ⬜ Not Started | Boilerplate exists |
@@ -77,32 +77,37 @@ All decisions are final unless re-opened by team discussion.
 
 ## Track B — Blocker Engine (Nilay / Claude Code)
 
+> **Code complete for Phases 1–4 (2026-05-29).** Package gate cleared (com.sadhanalock.app
+> on main); `markMorningPrayerDone()` (decision #16) + `getAppIcon()` (#17) implemented.
+> Last gate before first compile: **JDK 17 on the dev machine**. Bring-up in
+> `frontend/modules/sadhana-blocker/README.md`.
+
 ### Phase 1 — Foundations
-- [ ] Module skeleton (expo-module.config.json, build.gradle, AndroidManifest)
-- [ ] SadhanaBlocker.types.ts (copy contract from PLAN.md §4.1)
-- [ ] Hello-world overlay (show "Hare Krishna" on top of any app)
-- [ ] PermissionHelper.kt (Accessibility + Overlay permission flows)
+- [x] Module skeleton (expo-module.config.json, build.gradle, AndroidManifest)
+- [x] SadhanaBlocker.types.ts (copy contract from PLAN.md §4.1, + getAppIcon)
+- [x] Hello-world overlay (subsumed by full prayer overlay + `debugShowOverlay()`)
+- [x] PermissionHelper.kt (Accessibility + Overlay + battery + usage-access flows)
 
 ### Phase 2 — Core Engine
-- [ ] AppListHelper.kt (getInstalledApps + getAppIcon paginated)
-- [ ] PrefsStore.kt (SharedPreferences schema, 13 keys)
-- [ ] SadhanaAccessibilityService.kt (foreground app detection)
-- [ ] OverlayService.kt + overlay_prayer.xml (prayer overlay)
-- [ ] Gentle mode (instant Om tap)
-- [ ] Strict mode (10s wait then Om)
+- [x] AppListHelper.kt (getInstalledApps + getAppIcon paginated)
+- [x] PrefsStore.kt (SharedPreferences schema, 13 keys)
+- [x] SadhanaAccessibilityService.kt (foreground app detection → BlockerEngine)
+- [x] OverlayController.kt + overlay_prayer.xml (prayer overlay; TYPE_ACCESSIBILITY_OVERLAY)
+- [x] Gentle mode (instant Om tap)
+- [x] Strict mode (10s wait then Om)
 
 ### Phase 3 — Resilience
-- [ ] BootReceiver.kt (survive reboot)
-- [ ] HealthCheckWorker.kt (survive OEM kills)
-- [ ] ScheduleManager.kt (Night Lock + Morning Prayer Gate)
-- [ ] UsageStatsManager fallback
-- [ ] OEM-specific handling (Xiaomi, Samsung, OnePlus)
+- [x] BootReceiver.kt (survive reboot / app update)
+- [x] HealthCheckWorker.kt (survive OEM kills — periodic nudge)
+- [x] ScheduleManager.kt (Night Lock live; Morning Gate fully wired via markMorningPrayerDone)
+- [x] UsageStatsManager fallback (UsageStatsForegroundService, ~1.8s poll)
+- [~] OEM-specific handling (denylist spans Xiaomi/Samsung/OnePlus; autostart deep-links deferred to device testing)
 
 ### Phase 4 — Integration
-- [ ] SadhanaBlockerModule.kt (Expo Module bridge — all methods from §4.2)
-- [ ] Event emission (onOverlayShown, onPrayerCompleted, onServiceStateChanged)
-- [ ] Firebase Crashlytics integration
-- [ ] ProGuard rules
+- [x] SadhanaBlockerModule.kt (Expo Module bridge — all §4.2 methods + getAppIcon)
+- [x] Event emission (onOverlayShown, onPrayerCompleted, onServiceStateChanged)
+- [ ] Firebase Crashlytics integration (deferred — depends on google-services.json + Track-A package name)
+- [x] ProGuard rules (keep AccessibilityService / receivers / worker)
 
 ---
 

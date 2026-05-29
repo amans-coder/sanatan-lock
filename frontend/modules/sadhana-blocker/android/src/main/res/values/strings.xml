@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sadhana_accessibility_label">SadhanaLock</string>
+    <string name="sadhana_accessibility_summary">Gently pauses distracting apps until you pray</string>
+    <string name="sadhana_accessibility_description">SadhanaLock uses this service ONLY to detect which app is in the foreground, so it can show a prayer (sadhana) screen before you open an app you chose to lock. It does not read screen content, collect text, or transmit any data.</string>
+
+    <!-- Foreground-service / health notification channel -->
+    <string name="sadhana_channel_name">SadhanaLock status</string>
+    <string name="sadhana_channel_desc">Tells you if the prayer lock has stopped working</string>
+    <string name="sadhana_service_stopped_title">SadhanaLock has stopped</string>
+    <string name="sadhana_service_stopped_text">Tap to re-enable the prayer lock</string>
+
+    <!-- Overlay defaults (replaced at runtime by setOverlayContent) -->
+    <string name="overlay_default_mantra_dev">हरे कृष्ण</string>
+    <string name="overlay_default_mantra_translit">Hare Krishna</string>
+    <string name="overlay_default_mantra_meaning">Take a breath. Remember the divine before you scroll.</string>
+    <string name="overlay_om_button">ॐ</string>
+    <string name="overlay_strict_wait">Be still…</string>
+    <string name="overlay_night_lock_title">रात्रि विश्राम</string>
+    <string name="overlay_night_lock_text">It is night. Rest now — apps unlock in the morning.</string>
+</resources>
